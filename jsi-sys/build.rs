@@ -58,6 +58,9 @@ fn main() {
         println!("cargo:rerun-if-changed={}", bridge);
     }
 
+    env::set_var("CC", "/usr/bin/gcc-14");
+    env::set_var("CXX", "/usr/bin/g++-14");
+
     cxx_build::bridges(bridges)
         .flag_if_supported("-std=c++17")
         .files(compiles)

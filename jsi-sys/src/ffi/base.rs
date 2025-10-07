@@ -330,7 +330,6 @@ pub mod ffi {
 
     impl UniquePtr<Runtime> {}
 
-
     #[namespace = "facebook::react"]
     unsafe extern "C++" {
         pub type CallInvoker;

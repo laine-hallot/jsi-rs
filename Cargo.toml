@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "jsi-sys",
+  "jsi-rn-sys",
   "jsi-macros",
   "jsi-tests",
   "jsi"

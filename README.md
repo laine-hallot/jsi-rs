@@ -4,6 +4,12 @@ This library makes it possible to write React Native JSI modules in Rust.
 
 For an example, check out the `example` folder.
 
+## Dependencies
+
+- `glog`
+- `folly`
+- `gcc 14`
+
 ## Getting Started
 
 1. Clone this repo

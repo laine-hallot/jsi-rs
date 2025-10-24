@@ -11,3 +11,6 @@
 	url = https://github.com/facebook/hermes.git
 	ignore = dirty
 
+[submodule "vendor/folly"]
+	path = vendor/folly
+	url = git@github.com:facebook/folly.git

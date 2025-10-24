@@ -84,18 +84,19 @@ fn main() {
 
     println!("cargo:rerun-if-changed=include/wrapper.h");
     println!("cargo:rerun-if-changed=include/host.h");
+    println!("cargo:rerun-if-changed=include/stuff.h");
 
-    println!("cargo:rustc-link-lib=hermes");
+    println!("cargo:rustc-link-lib=hermesvm");
     println!(
         "cargo:rustc-link-search={}",
         pkg_base
-            .join("../vendor/hermes/build/API/hermes/")
+            .join("../vendor/hermes/build/lib/")
             .to_string_lossy()
     );
     println!(
         "cargo:rustc-env=LD_LIBRARY_PATH={}",
         pkg_base
-            .join("../vendor/hermes/build/API/hermes/")
+            .join("../vendor/hermes/build/lib/")
             .to_string_lossy()
     );
 
@@ -107,6 +108,11 @@ fn main() {
     ); */
 
     // Add link paths and libraries
-    println!("cargo:rustc-link-search=native=vendor/hermes/build/API/hermes_abi");
-    println!("cargo:rustc-link-lib=dylib=hermesabi");
+    println!(
+        "cargo:rustc-link-search={}",
+        pkg_base
+            .join("../vendor/hermes/build/API/hermes_abi/")
+            .to_string_lossy()
+    );
+    println!("cargo:rustc-link-lib=hermesabi");
 }

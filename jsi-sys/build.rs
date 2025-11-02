@@ -4,13 +4,6 @@ fn main() {
     let base = env::var_os("CARGO_MANIFEST_DIR").unwrap();
     let pkg_base = PathBuf::from(base);
 
-    let target_os = env::var_os("CARGO_CFG_TARGET_OS");
-    let target_os = if let Some(s) = &target_os {
-        s.to_str()
-    } else {
-        None
-    };
-
     let hermes_build_status = Command::new("bash")
         .args([pkg_base.join("../vendor/build-hermes.sh")])
         .current_dir(pkg_base.join("../vendor"))
@@ -27,7 +20,7 @@ fn main() {
 
     let rn_base = pkg_base.join("../vendor/react-native/packages/react-native");
 
-    let mut includes = vec![
+    let includes = vec![
         rn_base.join("React"),
         rn_base.join("React/Base"),
         rn_base.join("ReactCommon/jsi"),
@@ -37,24 +30,11 @@ fn main() {
         pkg_base.join("../vendor/hermes/public"),
     ];
 
-    if let Some("android") = target_os {
-        includes.push(rn_base.join("ReactAndroid/src/main/jni/react/turbomodule/"));
-        includes.push(pkg_base.join("vendor/fbjni/cxx"));
-    }
-
     let includes: Vec<_> = IntoIterator::into_iter(includes)
         .map(|p| dunce::canonicalize(&p).expect(&format!("missing include path {:?}", p)))
         .collect();
 
-    let mut compiles = vec![rn_base.join("ReactCommon/jsi/jsi/jsi.cpp")];
-
-    if let Some("android") = target_os {
-        compiles.push(
-            rn_base.join(
-                "ReactAndroid/src/main/jni/react/turbomodule/ReactCommon/CallInvokerHolder.cpp",
-            ),
-        );
-    }
+    let compiles = vec![rn_base.join("ReactCommon/jsi/jsi/jsi.cpp")];
 
     let compiles: Vec<_> = IntoIterator::into_iter(compiles)
         .map(|p| dunce::canonicalize(&p).expect(&format!("missing compile file {:?}", p)))
@@ -67,11 +47,7 @@ fn main() {
         .exported_header_dirs
         .extend(includes.iter().map(|e| e.as_path()));
 
-    let mut bridges = vec!["src/ffi/base.rs", "src/ffi/host.rs", "src/ffi/hermes.rs"];
-
-    if let Some("android") = target_os {
-        bridges.push("src/ffi/android.rs");
-    }
+    let bridges = vec!["src/ffi/base.rs", "src/ffi/host.rs", "src/ffi/hermes.rs"];
 
     for bridge in &bridges {
         println!("cargo:rerun-if-changed={}", bridge);

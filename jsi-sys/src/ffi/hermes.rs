@@ -5,10 +5,10 @@ pub(crate) mod ffi {
         include!("jsi/jsi.h");
 
         #[namespace = "facebook::jsi"]
-        pub type Runtime = crate::ffi::base::Runtime;
+        type Runtime = crate::ffi::base::Runtime;
         #[cxx_name = "Value"]
         #[namespace = "facebook::jsi"]
-        pub type JsiValue = crate::ffi::base::JsiValue;
+        type JsiValue = crate::ffi::base::JsiValue;
 
         pub fn cast_hermes_runtime(ptr: UniquePtr<HermesRuntime>) -> UniquePtr<Runtime>;
         pub fn create_runtime_config() -> UniquePtr<RuntimeConfig>;

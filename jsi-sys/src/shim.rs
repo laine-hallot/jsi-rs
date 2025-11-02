@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use crate::ffi::*;
+use crate::ffi::base::*;
 use cxx::*;
 
 impl HostObject {

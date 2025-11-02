@@ -7,14 +7,14 @@ pub(crate) mod ffi {
         include!("host.h");
 
         #[namespace = "facebook::jsi"]
-        pub type HostObject = crate::ffi::base::HostObject;
+        type HostObject = crate::ffi::base::HostObject;
         #[namespace = "facebook::jsi"]
-        pub type Runtime = crate::ffi::base::Runtime;
+        type Runtime = crate::ffi::base::Runtime;
         #[cxx_name = "Value"]
         #[namespace = "facebook::jsi"]
-        pub type JsiValue = crate::ffi::base::JsiValue;
+        type JsiValue = crate::ffi::base::JsiValue;
         #[namespace = "facebook::jsi"]
-        pub type PropNameID = crate::ffi::base::PropNameID;
+        type PropNameID = crate::ffi::base::PropNameID;
 
         pub type CxxHostObject;
         pub fn CxxHostObject_create(rho: Box<RustHostObject<'_>>) -> UniquePtr<CxxHostObject>;

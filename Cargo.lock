@@ -158,18 +158,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsi-tests"
-version = "0.3.1-alpha.1"
-dependencies = [
- "anyhow",
- "cxx",
- "cxx-build",
- "dunce",
- "jsi",
- "jsi-sys",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

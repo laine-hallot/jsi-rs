@@ -13,29 +13,32 @@ use crate::{
 };
 
 pub struct JsiValue<'rt>(
-    pub(crate) cxx::UniquePtr<sys::JsiValue>,
+    pub(crate) cxx::UniquePtr<sys::base::JsiValue>,
     pub(crate) PhantomData<&'rt ()>,
 );
 
 impl<'rt> JsiValue<'rt> {
     pub fn new_undefined() -> Self {
-        Self(sys::Value_fromUndefined(), PhantomData)
+        Self(sys::base::Value_fromUndefined(), PhantomData) 
     }
 
     pub fn new_null() -> Self {
-        Self(sys::Value_fromUndefined(), PhantomData)
+        Self(sys::base::Value_fromUndefined(), PhantomData) 
     }
 
     pub fn new_number(n: f64) -> Self {
-        Self(sys::Value_fromDouble(n), PhantomData)
+        Self(sys::base::Value_fromDouble(n), PhantomData) 
     }
 
     pub fn new_bool(b: bool) -> Self {
-        Self(sys::Value_fromBool(b), PhantomData)
+        Self(sys::base::Value_fromBool(b), PhantomData) 
     }
 
     pub fn new_json(s: &str, rt: &mut RuntimeHandle<'rt>) -> Self {
-        Self(sys::Value_fromJson(rt.get_inner_mut(), s), PhantomData)
+        Self(
+            sys::base::Value_fromJson(rt.get_inner_mut(), s),
+            PhantomData,
+        )
     }
 
     pub fn new_string(s: &str, rt: &mut RuntimeHandle<'rt>) -> Self {
@@ -44,7 +47,7 @@ impl<'rt> JsiValue<'rt> {
 
     pub fn is_null(&self) -> bool {
         // qualify this method call to avoid confusion with UniquePtr::is_null
-        sys::JsiValue::is_null(self.0.as_ref().unwrap())
+        sys::base::JsiValue::is_null(self.0.as_ref().unwrap())
     }
 
     pub fn is_undefined(&self) -> bool {
@@ -124,7 +127,7 @@ impl<'rt> Debug for JsiValue<'rt> {
 
 impl RuntimeEq for JsiValue<'_> {
     fn eq(&self, other: &Self, rt: &mut RuntimeHandle<'_>) -> bool {
-        sys::Value_compare(rt.get_inner_mut(), &*self.0, &*other.0)
+        sys::base::Value_compare(rt.get_inner_mut(), &*self.0, &*other.0)
     }
 }
 
@@ -140,7 +143,10 @@ impl RuntimeDisplay for JsiValue<'_> {
 
 impl RuntimeClone<'_> for JsiValue<'_> {
     fn clone(&self, rt: &mut RuntimeHandle<'_>) -> Self {
-        Self(sys::Value_copy(&*self.0, rt.get_inner_mut()), PhantomData)
+        Self(
+            sys::base::Value_copy(&*self.0, rt.get_inner_mut()),
+            PhantomData,
+        )
     }
 }
 
@@ -185,7 +191,7 @@ impl<'rt> FromValue<'rt> for bool {
 
 impl<'rt> FromValue<'rt> for JsiObject<'rt> {
     fn from_value(value: &JsiValue<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Value_asObject(&*value.0, rt.get_inner_mut())
+        sys::base::Value_asObject(&*value.0, rt.get_inner_mut())
             .ok()
             .map(|raw| JsiObject(raw, PhantomData))
     }
@@ -207,7 +213,7 @@ impl<'rt> FromValue<'rt> for String {
 
 impl<'rt> FromValue<'rt> for JsiString<'rt> {
     fn from_value(value: &JsiValue<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Value_asString(&*value.0, rt.get_inner_mut())
+        sys::base::Value_asString(&*value.0, rt.get_inner_mut())
             .ok()
             .map(|raw| JsiString(raw, PhantomData))
     }
@@ -215,7 +221,7 @@ impl<'rt> FromValue<'rt> for JsiString<'rt> {
 
 impl<'rt> FromValue<'rt> for JsiSymbol<'rt> {
     fn from_value(value: &JsiValue<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Value_asSymbol(&*value.0, rt.get_inner_mut())
+        sys::base::Value_asSymbol(&*value.0, rt.get_inner_mut())
             .ok()
             .map(|raw| JsiSymbol(raw, PhantomData))
     }
@@ -341,7 +347,7 @@ impl<'rt, T: IntoValue<'rt>> IntoValue<'rt> for Option<T> {
 impl<'rt> IntoValue<'rt> for JsiObject<'rt> {
     fn into_value(self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Value_fromObject(rt.get_inner_mut(), self.0),
+            sys::base::Value_fromObject(rt.get_inner_mut(), self.0),
             PhantomData,
         )
     }
@@ -350,7 +356,7 @@ impl<'rt> IntoValue<'rt> for JsiObject<'rt> {
 impl<'rt> IntoValue<'rt> for JsiString<'rt> {
     fn into_value(self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Value_fromString(rt.get_inner_mut(), self.0),
+            sys::base::Value_fromString(rt.get_inner_mut(), self.0),
             PhantomData,
         )
     }
@@ -359,7 +365,7 @@ impl<'rt> IntoValue<'rt> for JsiString<'rt> {
 impl<'rt> IntoValue<'rt> for JsiSymbol<'rt> {
     fn into_value(self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Value_fromSymbol(rt.get_inner_mut(), self.0),
+            sys::base::Value_fromSymbol(rt.get_inner_mut(), self.0),
             PhantomData,
         )
     }
@@ -426,7 +432,7 @@ impl<'rt, T: AsValue<'rt>> AsValue<'rt> for Option<&T> {
 impl<'rt> AsValue<'rt> for JsiObject<'rt> {
     fn as_value(&self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Value_copyFromObject(rt.get_inner_mut(), &*self.0),
+            sys::base::Value_copyFromObject(rt.get_inner_mut(), &*self.0),
             PhantomData,
         )
     }
@@ -435,7 +441,7 @@ impl<'rt> AsValue<'rt> for JsiObject<'rt> {
 impl<'rt> AsValue<'rt> for JsiString<'rt> {
     fn as_value(&self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Value_copyFromString(rt.get_inner_mut(), self.0.as_ref().unwrap()),
+            sys::base::Value_copyFromString(rt.get_inner_mut(), self.0.as_ref().unwrap()),
             PhantomData,
         )
     }
@@ -444,7 +450,7 @@ impl<'rt> AsValue<'rt> for JsiString<'rt> {
 impl<'rt> AsValue<'rt> for JsiSymbol<'rt> {
     fn as_value(&self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Value_copyFromSymbol(rt.get_inner_mut(), self.0.as_ref().unwrap()),
+            sys::base::Value_copyFromSymbol(rt.get_inner_mut(), self.0.as_ref().unwrap()),
             PhantomData,
         )
     }
@@ -453,10 +459,10 @@ impl<'rt> AsValue<'rt> for JsiSymbol<'rt> {
 impl<'rt> AsValue<'rt> for JsiArray<'rt> {
     fn as_value(&self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         // this is a subclass of JsiObject, so pointer cast is safe
-        let ptr = &*self.0 as *const _ as *const sys::JsiObject;
+        let ptr = &*self.0 as *const _ as *const sys::base::JsiObject;
 
         JsiValue(
-            sys::Value_copyFromObject(rt.get_inner_mut(), unsafe { &*ptr }),
+            sys::base::Value_copyFromObject(rt.get_inner_mut(), unsafe { &*ptr }),
             PhantomData,
         )
     }
@@ -465,10 +471,10 @@ impl<'rt> AsValue<'rt> for JsiArray<'rt> {
 impl<'rt> AsValue<'rt> for JsiArrayBuffer<'rt> {
     fn as_value(&self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         // this is a subclass of JsiObject, so pointer cast is safe
-        let ptr = &*self.0 as *const _ as *const sys::JsiObject;
+        let ptr = &*self.0 as *const _ as *const sys::base::JsiObject;
 
         JsiValue(
-            sys::Value_copyFromObject(rt.get_inner_mut(), unsafe { &*ptr }),
+            sys::base::Value_copyFromObject(rt.get_inner_mut(), unsafe { &*ptr }),
             PhantomData,
         )
     }
@@ -477,10 +483,10 @@ impl<'rt> AsValue<'rt> for JsiArrayBuffer<'rt> {
 impl<'rt> AsValue<'rt> for JsiFn<'rt> {
     fn as_value(&self, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         // this is a subclass of JsiObject, so pointer cast is safe
-        let ptr = &*self.0 as *const _ as *const sys::JsiObject;
+        let ptr = &*self.0 as *const _ as *const sys::base::JsiObject;
 
         JsiValue(
-            sys::Value_copyFromObject(rt.get_inner_mut(), unsafe { &*ptr }),
+            sys::base::Value_copyFromObject(rt.get_inner_mut(), unsafe { &*ptr }),
             PhantomData,
         )
     }

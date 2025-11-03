@@ -4,13 +4,13 @@ use crate::{sys, RuntimeDisplay, RuntimeEq, RuntimeHandle};
 
 /// A JavaScript `Symbol`
 pub struct JsiSymbol<'rt>(
-    pub(crate) cxx::UniquePtr<sys::JsiSymbol>,
+    pub(crate) cxx::UniquePtr<sys::base::JsiSymbol>,
     pub(crate) PhantomData<&'rt ()>,
 );
 
 impl RuntimeEq for JsiSymbol<'_> {
     fn eq(&self, other: &Self, rt: &mut RuntimeHandle<'_>) -> bool {
-        sys::Symbol_compare(
+        sys::base::Symbol_compare(
             rt.get_inner_mut(),
             self.0.as_ref().unwrap(),
             other.0.as_ref().unwrap(),

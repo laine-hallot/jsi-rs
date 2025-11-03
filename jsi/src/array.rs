@@ -6,14 +6,14 @@ use crate::{sys, JsiValue, RuntimeHandle};
 /// [`Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array).
 /// Can be used to share large buffers of data with a React Native application.
 pub struct JsiArray<'rt>(
-    pub(crate) cxx::UniquePtr<sys::JsiArray>,
+    pub(crate) cxx::UniquePtr<sys::base::JsiArray>,
     pub(crate) PhantomData<&'rt mut ()>,
 );
 
 impl<'rt> JsiArray<'rt> {
     pub fn new(len: usize, rt: &mut RuntimeHandle<'rt>) -> Self {
         Self(
-            sys::Array_createWithLength(rt.get_inner_mut(), len),
+            sys::base::Array_createWithLength(rt.get_inner_mut(), len),
             PhantomData,
         )
     }
@@ -24,13 +24,13 @@ impl<'rt> JsiArray<'rt> {
 
     pub fn get(&self, index: usize, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Array_get(&*self.0, rt.get_inner_mut(), index),
+            sys::base::Array_get(&*self.0, rt.get_inner_mut(), index),
             PhantomData,
         )
     }
 
     pub fn set(&mut self, index: usize, value: &JsiValue<'rt>, rt: &mut RuntimeHandle<'rt>) {
-        sys::Array_set(
+        sys::base::Array_set(
             self.0.pin_mut(),
             rt.get_inner_mut(),
             index,

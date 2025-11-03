@@ -13,18 +13,18 @@ unsafe impl<'rt> Send for JsiObject<'rt> {}
 
 /// A JavaScript `Object`.
 pub struct JsiObject<'rt>(
-    pub(crate) cxx::UniquePtr<sys::JsiObject>,
+    pub(crate) cxx::UniquePtr<sys::base::JsiObject>,
     pub(crate) PhantomData<&'rt mut ()>,
 );
 
 impl<'rt> JsiObject<'rt> {
     pub fn new(rt: &mut RuntimeHandle<'rt>) -> Self {
-        JsiObject(sys::Object_create(rt.get_inner_mut()), PhantomData)
+        unsafe { JsiObject(sys::base::Object_create(rt.get_inner_mut()), PhantomData) }
     }
 
     pub fn get(&self, prop: PropName, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::Object_getProperty(
+            sys::base::Object_getProperty(
                 self.0.as_ref().unwrap(),
                 rt.get_inner_mut(),
                 prop.0.as_ref().unwrap(),
@@ -39,7 +39,7 @@ impl<'rt> JsiObject<'rt> {
     }
 
     pub fn set(&mut self, prop: PropName, value: &JsiValue, rt: &mut RuntimeHandle<'rt>) {
-        sys::Object_setProperty(
+        sys::base::Object_setProperty(
             self.0.pin_mut(),
             rt.get_inner_mut(),
             prop.0.as_ref().unwrap(),
@@ -49,7 +49,7 @@ impl<'rt> JsiObject<'rt> {
 
     pub fn properties(&mut self, rt: &mut RuntimeHandle<'rt>) -> JsiArray<'rt> {
         JsiArray(
-            sys::Object_getPropertyNames(self.0.pin_mut(), rt.get_inner_mut()),
+            sys::base::Object_getPropertyNames(self.0.pin_mut(), rt.get_inner_mut()),
             PhantomData,
         )
     }
@@ -83,7 +83,7 @@ pub trait IntoObject<'rt> {
 
 impl<'rt> FromObject<'rt> for JsiArray<'rt> {
     fn from_object(obj: &JsiObject<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Object_asArray(&*obj.0, rt.get_inner_mut())
+        sys::base::Object_asArray(&*obj.0, rt.get_inner_mut())
             .ok()
             .map(|raw| JsiArray(raw, PhantomData))
     }
@@ -91,7 +91,7 @@ impl<'rt> FromObject<'rt> for JsiArray<'rt> {
 
 impl<'rt> FromObject<'rt> for JsiArrayBuffer<'rt> {
     fn from_object(ojb: &JsiObject<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Object_asArrayBuffer(&*ojb.0, rt.get_inner_mut())
+        sys::base::Object_asArrayBuffer(&*ojb.0, rt.get_inner_mut())
             .ok()
             .map(|raw| JsiArrayBuffer(raw, PhantomData))
     }
@@ -99,7 +99,7 @@ impl<'rt> FromObject<'rt> for JsiArrayBuffer<'rt> {
 
 impl<'rt> FromObject<'rt> for JsiFn<'rt> {
     fn from_object(obj: &JsiObject<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Object_asFunction(&*obj.0, rt.get_inner_mut())
+        sys::base::Object_asFunction(&*obj.0, rt.get_inner_mut())
             .ok()
             .map(|raw| JsiFn(raw, PhantomData))
     }
@@ -157,7 +157,7 @@ impl<'rt, T: Into<JsiObject<'rt>>> IntoObject<'rt> for T {
 impl<'rt> IntoObject<'rt> for OwnedJsiHostObject<'rt> {
     fn into_object(self, rt: &mut RuntimeHandle<'rt>) -> JsiObject<'rt> {
         JsiObject(
-            sys::Object_createFromHostObjectUnique(rt.get_inner_mut(), self.0),
+            sys::base::Object_createFromHostObjectUnique(rt.get_inner_mut(), self.0),
             PhantomData,
         )
     }
@@ -173,7 +173,7 @@ impl<'rt> IntoObject<'rt> for OwnedJsiUserHostObject<'rt> {
 impl<'rt> IntoObject<'rt> for SharedJsiHostObject<'rt> {
     fn into_object(self, rt: &mut RuntimeHandle<'rt>) -> JsiObject<'rt> {
         JsiObject(
-            sys::Object_createFromHostObjectShared(rt.get_inner_mut(), self.0),
+            sys::base::Object_createFromHostObjectShared(rt.get_inner_mut(), self.0),
             PhantomData,
         )
     }
@@ -188,7 +188,7 @@ impl<'rt> IntoObject<'rt> for SharedJsiUserHostObject<'rt> {
 
 impl<'rt> FromObject<'rt> for SharedJsiHostObject<'rt> {
     fn from_object(obj: &JsiObject<'rt>, rt: &mut RuntimeHandle<'rt>) -> Option<Self> {
-        sys::Object_asHostObject(&*obj.0, rt.get_inner_mut())
+        sys::base::Object_asHostObject(&*obj.0, rt.get_inner_mut())
             .ok()
             .map(|raw| SharedJsiHostObject(raw, PhantomData))
     }

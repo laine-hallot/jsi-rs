@@ -5,26 +5,26 @@ use std::marker::PhantomData;
 use std::pin::Pin;
 
 #[derive(Debug)]
-pub struct RuntimeHandle<'rt>(pub(crate) *mut sys::Runtime, PhantomData<&'rt mut ()>);
+pub struct RuntimeHandle<'rt>(pub(crate) *mut sys::base::Runtime, PhantomData<&'rt mut ()>);
 
 impl<'rt> RuntimeHandle<'rt> {
     // Creates a new RuntimeHandle; it's the caller's responsibility to make
     // sure that the runtime is not destroyed while objects under this runtime
     // are still being used
-    pub fn new_unchecked(ptr: *mut sys::Runtime) -> Self {
+    pub fn new_unchecked(ptr: *mut sys::base::Runtime) -> Self {
         RuntimeHandle(ptr, PhantomData)
     }
 
-    pub fn get_inner_mut(&mut self) -> Pin<&'rt mut sys::Runtime> {
+    pub fn get_inner_mut(&mut self) -> Pin<&'rt mut sys::base::Runtime> {
         unsafe { Pin::new_unchecked(&mut *self.0) }
     }
 
-    pub fn get_inner(&mut self) -> &'rt sys::Runtime {
+    pub fn get_inner(&mut self) -> &'rt sys::base::Runtime {
         unsafe { &*self.0 }
     }
 
     pub fn global(&mut self) -> JsiObject<'rt> {
-        JsiObject(sys::Runtime_global(self.get_inner_mut()), PhantomData)
+        JsiObject(sys::base::Runtime_global(self.get_inner_mut()), PhantomData) 
     }
 
     pub fn eq<T: RuntimeEq>(&mut self, lhs: &T, rhs: &T) -> bool {

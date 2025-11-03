@@ -6,7 +6,7 @@ use std::pin::Pin;
 
 /// A JavaScript function.
 pub struct JsiFn<'rt>(
-    pub(crate) cxx::UniquePtr<sys::JsiFunction>,
+    pub(crate) cxx::UniquePtr<sys::base::JsiFunction>,
     pub(crate) PhantomData<&'rt mut ()>,
 );
 
@@ -16,13 +16,13 @@ impl<'rt> JsiFn<'rt> {
         args: T,
         rt: &mut RuntimeHandle<'rt>,
     ) -> Result<JsiValue<'rt>, cxx::Exception> {
-        let mut args_cxx = sys::create_value_vector();
+        let mut args_cxx = sys::base::create_value_vector();
         for arg in args {
-            sys::push_value_vector(args_cxx.pin_mut(), arg.0);
+            sys::base::push_value_vector(args_cxx.pin_mut(), arg.0);
         }
 
         Ok(JsiValue(
-            sys::Function_call(
+            sys::base::Function_call(
                 self.0.as_ref().unwrap(),
                 rt.get_inner_mut(),
                 args_cxx.as_ref().unwrap(),
@@ -36,13 +36,13 @@ impl<'rt> JsiFn<'rt> {
         args: T,
         rt: &mut RuntimeHandle<'rt>,
     ) -> Result<JsiValue<'rt>, cxx::Exception> {
-        let mut args_cxx = sys::create_value_vector();
+        let mut args_cxx = sys::base::create_value_vector();
         for arg in args {
-            sys::push_value_vector(args_cxx.pin_mut(), arg.0);
+            sys::base::push_value_vector(args_cxx.pin_mut(), arg.0);
         }
 
         Ok(JsiValue(
-            sys::Function_callAsConstructor(
+            sys::base::Function_callAsConstructor(
                 self.0.as_ref().unwrap(),
                 rt.get_inner_mut(),
                 args_cxx.as_ref().unwrap(),
@@ -61,13 +61,13 @@ impl<'rt> JsiFn<'rt> {
         'rt: 'a,
         'rt: 'ret,
     {
-        let mut args_cxx = sys::create_value_vector();
+        let mut args_cxx = sys::base::create_value_vector();
         for arg in args {
-            sys::push_value_vector(args_cxx.pin_mut(), arg.0);
+            sys::base::push_value_vector(args_cxx.pin_mut(), arg.0);
         }
 
         Ok(JsiValue(
-            sys::Function_callWithThis(
+            sys::base::Function_callWithThis(
                 self.0.as_ref().unwrap(),
                 rt.get_inner_mut(),
                 this.0.as_ref().unwrap(),
@@ -90,14 +90,16 @@ impl<'rt> JsiFn<'rt> {
             body
         );
 
-        let cb: sys::HostFunctionCallback =
-            Box::new(move |rt: Pin<&mut sys::Runtime>, this, args| {
+        let cb: sys::base::HostFunctionCallback =
+            Box::new(move |rt: Pin<&mut sys::base::Runtime>, this, args| {
                 let mut rt: RuntimeHandle =
                     unsafe { RuntimeHandle::new_unchecked(rt.get_unchecked_mut() as *mut _) };
-                let this = JsiValue(sys::Value_copy(this, rt.get_inner_mut()), PhantomData);
+                let this = JsiValue(sys::base::Value_copy(this, rt.get_inner_mut()), PhantomData);
                 let args = args
                     .into_iter()
-                    .map(|arg| JsiValue(sys::Value_copy(arg, rt.get_inner_mut()), PhantomData))
+                    .map(|arg| {
+                        JsiValue(sys::base::Value_copy(arg, rt.get_inner_mut()), PhantomData)
+                    })
                     .collect();
 
                 #[cfg(feature = "host-fn-trace")]
@@ -118,7 +120,7 @@ impl<'rt> JsiFn<'rt> {
 
         JsiFn(
             unsafe {
-                sys::Function_createFromHostFunction(
+                sys::base::Function_createFromHostFunction(
                     rt.get_inner_mut(),
                     name.0.as_ref().unwrap(),
                     param_count as u32,
@@ -166,8 +168,7 @@ pub fn create_promise<
                 Some(inner) => inner(resolve, reject, rt),
                 None => anyhow::bail!("promise lambda is only supposed to be called once!"),
             }
-
-            Ok(JsiValue::new_undefined())
+            unsafe { Ok(JsiValue::new_undefined()) }
         }),
         rt,
     );

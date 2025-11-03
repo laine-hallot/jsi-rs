@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-pub use sys::CallInvokerCallback;
+pub use sys::base::CallInvokerCallback;
 
 use crate::sys;
 
@@ -8,7 +8,7 @@ use crate::sys;
 /// trying to call a JavaScript function from a thread other than the JS thread.
 #[derive(Clone)]
 pub struct CallInvoker<'rt>(
-    pub(crate) cxx::SharedPtr<sys::CallInvoker>,
+    pub(crate) cxx::SharedPtr<sys::base::CallInvoker>,
     pub(crate) PhantomData<&'rt ()>,
 );
 
@@ -16,7 +16,7 @@ unsafe impl Send for CallInvoker<'_> {}
 unsafe impl Sync for CallInvoker<'_> {}
 
 impl<'rt> CallInvoker<'rt> {
-    pub fn new(ptr: cxx::SharedPtr<sys::CallInvoker>) -> Self {
+    pub fn new(ptr: cxx::SharedPtr<sys::base::CallInvoker>) -> Self {
         CallInvoker(ptr, PhantomData)
     }
 
@@ -26,7 +26,10 @@ impl<'rt> CallInvoker<'rt> {
         log::trace!("call invoker sync call with closure at {:p}", job);
 
         unsafe {
-            sys::CallInvoker_invokeSync(self.0.clone(), Box::into_raw(Box::new(job)) as *mut _)
+            sys::base::CallInvoker_invokeSync(
+                self.0.clone(),
+                Box::into_raw(Box::new(job)) as *mut _,
+            )
         }
     }
 
@@ -35,7 +38,10 @@ impl<'rt> CallInvoker<'rt> {
         log::trace!("call invoker async call with closure at {:p}", job);
 
         unsafe {
-            sys::CallInvoker_invokeAsync(self.0.clone(), Box::into_raw(Box::new(job)) as *mut _)
+            sys::base::CallInvoker_invokeAsync(
+                self.0.clone(),
+                Box::into_raw(Box::new(job)) as *mut _,
+            )
         }
     }
 }

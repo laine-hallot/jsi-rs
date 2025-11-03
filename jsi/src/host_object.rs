@@ -7,18 +7,18 @@ use anyhow::bail;
 use std::{marker::PhantomData, pin::Pin};
 
 use crate::{sys, IntoValue, JsTaskCallback, JsiValue, PropName, RuntimeHandle};
-use sys::CallInvokerCallback;
+use sys::base::CallInvokerCallback;
 
 /// An owned host object
 pub struct OwnedJsiHostObject<'rt>(
-    pub(crate) cxx::UniquePtr<sys::HostObject>,
+    pub(crate) cxx::UniquePtr<sys::host::HostObject>,
     pub(crate) PhantomData<&'rt mut ()>,
 );
 
 impl<'rt> OwnedJsiHostObject<'rt> {
     pub fn get(&mut self, prop: &PropName, rt: &mut RuntimeHandle<'rt>) -> JsiValue<'rt> {
         JsiValue(
-            sys::HostObject_get(
+            sys::base::HostObject::get(
                 self.0.pin_mut(),
                 rt.get_inner_mut(),
                 prop.0.as_ref().unwrap(),
@@ -36,10 +36,11 @@ impl<'rt> OwnedJsiHostObject<'rt> {
     }
 
     pub fn properties(&mut self, rt: &mut RuntimeHandle<'rt>) -> Vec<PropName> {
-        let mut props = sys::HostObject_getPropertyNames(self.0.pin_mut(), rt.get_inner_mut());
+        let mut props =
+            sys::base::HostObject::get_property_names(self.0.pin_mut(), rt.get_inner_mut());
         let mut vec = Vec::with_capacity(props.len());
         loop {
-            let ptr = sys::pop_prop_name_vector(props.pin_mut());
+            let ptr = sys::base::pop_prop_name_vector(props.pin_mut());
             if ptr.is_null() {
                 break;
             }
@@ -51,7 +52,7 @@ impl<'rt> OwnedJsiHostObject<'rt> {
 
 /// A shared reference to a host object
 pub struct SharedJsiHostObject<'rt>(
-    pub(crate) cxx::SharedPtr<sys::HostObject>,
+    pub(crate) cxx::SharedPtr<sys::host::HostObject>,
     pub(crate) PhantomData<&'rt mut ()>,
 );
 
@@ -88,28 +89,40 @@ struct UserHostObjectWrapper<T>(T);
 impl<'rt, T: UserHostObject<'rt>> sys::HostObjectImpl for UserHostObjectWrapper<T> {
     fn get(
         &mut self,
-        rt: Pin<&mut sys::Runtime>,
-        name: &sys::PropNameID,
-    ) -> anyhow::Result<cxx::UniquePtr<sys::JsiValue>> {
+        rt: Pin<&mut sys::host::Runtime>,
+        name: &sys::host::PropNameID,
+    ) -> anyhow::Result<cxx::UniquePtr<sys::host::JsiValue>> {
         let mut rt = RuntimeHandle::new_unchecked(unsafe { rt.get_unchecked_mut() as *mut _ });
-        let name = PropName(sys::PropNameID_copy(name, rt.get_inner_mut()), PhantomData);
+        let name = PropName(
+            sys::base::PropNameID_copy(name, rt.get_inner_mut()),
+            PhantomData,
+        );
         let value = UserHostObject::get(&mut self.0, name, &mut rt)?;
         Ok(value.0)
     }
 
     fn set(
         &mut self,
-        rt: Pin<&mut sys::Runtime>,
-        name: &sys::PropNameID,
-        value: &sys::JsiValue,
+        rt: Pin<&mut sys::host::Runtime>,
+        name: &sys::host::PropNameID,
+        value: &sys::host::JsiValue,
     ) -> anyhow::Result<()> {
         let mut rt = RuntimeHandle::new_unchecked(unsafe { rt.get_unchecked_mut() as *mut _ });
-        let name = PropName(sys::PropNameID_copy(name, rt.get_inner_mut()), PhantomData);
-        let value = JsiValue(sys::Value_copy(value, rt.get_inner_mut()), PhantomData);
+        let name = PropName(
+            sys::base::PropNameID_copy(name, rt.get_inner_mut()),
+            PhantomData,
+        );
+        let value = JsiValue(
+            sys::base::Value_copy(value, rt.get_inner_mut()),
+            PhantomData,
+        );
         UserHostObject::set(&mut self.0, name, value, &mut rt)
     }
 
-    fn properties(&mut self, rt: Pin<&mut sys::Runtime>) -> Vec<cxx::UniquePtr<sys::PropNameID>> {
+    fn properties(
+        &mut self,
+        rt: Pin<&mut sys::host::Runtime>,
+    ) -> Vec<cxx::UniquePtr<sys::host::PropNameID>> {
         let mut rt = RuntimeHandle::new_unchecked(unsafe { rt.get_unchecked_mut() as *mut _ });
         let props = UserHostObject::properties(&mut self.0, &mut rt);
         props.into_iter().map(|p| p.0).collect()
@@ -130,7 +143,7 @@ impl<T> Drop for UserHostObjectWrapper<T> {
 /// A host object that is implemented in Rust using a [`UserHostObject`] trait
 /// object. Start with this if you want to implement a host object.
 pub struct OwnedJsiUserHostObject<'rt>(
-    cxx::UniquePtr<sys::CxxHostObject>,
+    cxx::UniquePtr<sys::host::CxxHostObject>,
     PhantomData<&'rt mut ()>,
 );
 
@@ -163,7 +176,7 @@ impl<'rt> OwnedJsiUserHostObject<'rt> {
             b.as_ref()
         );
 
-        let ptr = sys::CxxHostObject_create(b);
+        let ptr = sys::host::CxxHostObject_create(b);
 
         #[cfg(feature = "host-object-trace")]
         log::trace!(
@@ -179,7 +192,7 @@ impl<'rt> OwnedJsiUserHostObject<'rt> {
     // because `Any` imposes `'static` which makes life hard due to how there
     // are lifetimes everywhere in this code
     pub fn get_inner_mut<'u: 'rt, T: UserHostObject<'u>>(&mut self) -> Option<&mut T> {
-        let rho = sys::CxxHostObject_getInnerMut(self.0.as_mut().unwrap());
+        let rho = sys::host::CxxHostObject_getInnerMut(self.0.as_mut().unwrap());
         let ho_inner = unsafe {
             &mut *(rho.0.as_mut() as *mut dyn sys::HostObjectImpl as *mut UserHostObjectWrapper<T>)
         };
@@ -187,7 +200,7 @@ impl<'rt> OwnedJsiUserHostObject<'rt> {
     }
 
     pub fn get_inner<'u: 'rt, T: UserHostObject<'u>>(&self) -> Option<&T> {
-        let rho = sys::CxxHostObject_getInner(self.0.as_ref().unwrap());
+        let rho = sys::host::CxxHostObject_getInner(self.0.as_ref().unwrap());
         let ho_inner = unsafe {
             &*(rho.0.as_ref() as *const dyn sys::HostObjectImpl as *const UserHostObjectWrapper<T>)
         };
@@ -197,7 +210,7 @@ impl<'rt> OwnedJsiUserHostObject<'rt> {
 
 impl<'rt> Into<OwnedJsiHostObject<'rt>> for OwnedJsiUserHostObject<'rt> {
     fn into(self) -> OwnedJsiHostObject<'rt> {
-        OwnedJsiHostObject(sys::CxxHostObject_toHostObjectU(self.0), self.1)
+        OwnedJsiHostObject(sys::host::CxxHostObject_toHostObjectU(self.0), self.1)
     }
 }
 
@@ -205,7 +218,7 @@ impl<'rt> TryInto<OwnedJsiUserHostObject<'rt>> for OwnedJsiHostObject<'rt> {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<OwnedJsiUserHostObject<'rt>, Self::Error> {
-        let ptr = sys::CxxHostObject_fromHostObjectU(self.0);
+        let ptr = sys::host::CxxHostObject_fromHostObjectU(self.0);
 
         if ptr.is_null() {
             bail!("this host object is not a Rust host object");
@@ -218,7 +231,7 @@ impl<'rt> TryInto<OwnedJsiUserHostObject<'rt>> for OwnedJsiHostObject<'rt> {
 /// A host object that is implemented in Rust using a [`UserHostObject`] trait object.
 #[derive(Clone)]
 pub struct SharedJsiUserHostObject<'rt>(
-    cxx::SharedPtr<sys::CxxHostObject>,
+    cxx::SharedPtr<sys::host::CxxHostObject>,
     PhantomData<&'rt mut ()>,
 );
 
@@ -231,7 +244,7 @@ impl<'rt> SharedJsiUserHostObject<'rt> {
             self.0.as_ref().unwrap()
         );
 
-        let rho = sys::CxxHostObject_getInner(self.0.as_ref().unwrap());
+        let rho = sys::host::CxxHostObject_getInner(self.0.as_ref().unwrap());
 
         #[cfg(feature = "host-object-trace")]
         log::trace!("recovered outer box {:p}", rho);
@@ -252,7 +265,7 @@ impl<'rt> SharedJsiUserHostObject<'rt> {
 
 impl<'rt> Into<SharedJsiHostObject<'rt>> for SharedJsiUserHostObject<'rt> {
     fn into(self) -> SharedJsiHostObject<'rt> {
-        SharedJsiHostObject(sys::CxxHostObject_toHostObjectS(self.0), self.1)
+        SharedJsiHostObject(sys::host::CxxHostObject_toHostObjectS(self.0), self.1)
     }
 }
 
@@ -260,7 +273,7 @@ impl<'rt> TryInto<SharedJsiUserHostObject<'rt>> for SharedJsiHostObject<'rt> {
     type Error = anyhow::Error;
 
     fn try_into(self) -> Result<SharedJsiUserHostObject<'rt>, Self::Error> {
-        let ptr = sys::CxxHostObject_fromHostObjectS(self.0);
+        let ptr = sys::host::CxxHostObject_fromHostObjectS(self.0);
 
         if ptr.is_null() {
             bail!("this host object is not a Rust host object");

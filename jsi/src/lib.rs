@@ -65,8 +65,8 @@ pub type JsTaskCallback = Box<
 >;
 
 pub fn init(
-    rt: *mut sys::Runtime,
-    call_invoker: cxx::SharedPtr<sys::CallInvoker>,
+    rt: *mut sys::base::Runtime,
+    call_invoker: cxx::SharedPtr<sys::base::CallInvoker>,
 ) -> (RuntimeHandle<'static>, CallInvoker<'static>) {
     #[cfg(feature = "log")]
     log::debug!("got JSI runtime pointer: {:p}", rt);

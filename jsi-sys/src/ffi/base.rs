@@ -30,28 +30,28 @@ pub mod ffi {
         pub type Runtime;
 
         #[namespace = "jsi_rs::ffi"]
-        pub fn Runtime_evaluateJavaScript(
+        pub unsafe fn Runtime_evaluateJavaScript(
             _self: Pin<&mut Runtime>,
             buffer: &SharedPtr<Buffer>,
             source_url: &str,
         ) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Runtime_prepareJavaScript(
+        pub unsafe fn Runtime_prepareJavaScript(
             _self: Pin<&mut Runtime>,
             buffer: &SharedPtr<Buffer>,
             source_url: &str,
         ) -> SharedPtr<ConstPreparedJavaScript>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Runtime_evaluatePreparedJavaScript(
+        pub unsafe fn Runtime_evaluatePreparedJavaScript(
             _self: Pin<&mut Runtime>,
             js: &SharedPtr<ConstPreparedJavaScript>,
         ) -> UniquePtr<JsiValue>;
         #[cxx_name = "drainMicrotasks"]
         pub fn drain_microtasks(self: Pin<&mut Runtime>, max_microtasks_hint: i32) -> bool;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Runtime_global(_self: Pin<&mut Runtime>) -> UniquePtr<JsiObject>;
+        pub unsafe fn Runtime_global(_self: Pin<&mut Runtime>) -> UniquePtr<JsiObject>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Runtime_description(_self: Pin<&mut Runtime>) -> UniquePtr<CxxString>;
+        pub unsafe fn Runtime_description(_self: Pin<&mut Runtime>) -> UniquePtr<CxxString>;
         #[cxx_name = "isInspectable"]
         pub fn is_inspectable(self: Pin<&mut Runtime>) -> bool;
         pub fn instrumentation(self: Pin<&mut Runtime>) -> Pin<&mut Instrumentation>;
@@ -59,7 +59,7 @@ pub mod ffi {
         pub type HostObject;
 
         #[namespace = "jsi_rs::ffi"]
-        pub fn HostObject_get(
+        pub unsafe fn HostObject_get(
             _self: Pin<&mut HostObject>,
             rt: Pin<&mut Runtime>,
             name: &PropNameID,
@@ -71,7 +71,7 @@ pub mod ffi {
             value: &JsiValue,
         );
         #[namespace = "jsi_rs::ffi"]
-        pub fn HostObject_getPropertyNames(
+        pub unsafe fn HostObject_getPropertyNames(
             _self: Pin<&mut HostObject>,
             rt: Pin<&mut Runtime>,
         ) -> UniquePtr<CxxVector<PropNameID>>;
@@ -81,17 +81,20 @@ pub mod ffi {
         pub type PropNameID;
 
         #[namespace = "jsi_rs::ffi"]
-        pub fn PropNameID_forUtf8(rt: Pin<&mut Runtime>, str: &str) -> UniquePtr<PropNameID>;
+        pub unsafe fn PropNameID_forUtf8(rt: Pin<&mut Runtime>, str: &str)
+            -> UniquePtr<PropNameID>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn PropNameID_forString(
+        pub unsafe fn PropNameID_forString(
             rt: Pin<&mut Runtime>,
             str: &JsiString,
         ) -> UniquePtr<PropNameID>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn PropNameID_toUtf8(_self: &PropNameID, rt: Pin<&mut Runtime>)
-            -> UniquePtr<CxxString>;
+        pub unsafe fn PropNameID_toUtf8(
+            _self: &PropNameID,
+            rt: Pin<&mut Runtime>,
+        ) -> UniquePtr<CxxString>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn PropNameID_compare(
+        pub unsafe fn PropNameID_compare(
             rt: Pin<&mut Runtime>,
             lhs: &PropNameID,
             rhs: &PropNameID,
@@ -102,25 +105,39 @@ pub mod ffi {
         #[cxx_name = "Symbol"]
         pub type JsiSymbol;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Symbol_compare(rt: Pin<&mut Runtime>, lhs: &JsiSymbol, rhs: &JsiSymbol) -> bool;
+        pub unsafe fn Symbol_compare(
+            rt: Pin<&mut Runtime>,
+            lhs: &JsiSymbol,
+            rhs: &JsiSymbol,
+        ) -> bool;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Symbol_toString(_self: &JsiSymbol, rt: Pin<&mut Runtime>) -> UniquePtr<CxxString>;
+        pub unsafe fn Symbol_toString(
+            _self: &JsiSymbol,
+            rt: Pin<&mut Runtime>,
+        ) -> UniquePtr<CxxString>;
 
         #[cxx_name = "String"]
         pub type JsiString;
         #[namespace = "jsi_rs::ffi"]
-        pub fn String_fromUtf8(rt: Pin<&mut Runtime>, str: &str) -> UniquePtr<JsiString>;
+        pub unsafe fn String_fromUtf8(rt: Pin<&mut Runtime>, str: &str) -> UniquePtr<JsiString>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn String_compare(rt: Pin<&mut Runtime>, lhs: &JsiString, rhs: &JsiString) -> bool;
+        pub unsafe fn String_compare(
+            rt: Pin<&mut Runtime>,
+            lhs: &JsiString,
+            rhs: &JsiString,
+        ) -> bool;
         #[namespace = "jsi_rs::ffi"]
-        pub fn String_toString(_self: &JsiString, rt: Pin<&mut Runtime>) -> UniquePtr<CxxString>;
+        pub unsafe fn String_toString(
+            _self: &JsiString,
+            rt: Pin<&mut Runtime>,
+        ) -> UniquePtr<CxxString>;
 
         #[cxx_name = "Object"]
         pub type JsiObject;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_create(rt: Pin<&mut Runtime>) -> UniquePtr<JsiObject>;
+        pub unsafe fn Object_create(rt: Pin<&mut Runtime>) -> UniquePtr<JsiObject>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_createFromHostObjectShared(
+        pub unsafe fn Object_createFromHostObjectShared(
             rt: Pin<&mut Runtime>,
             ho: SharedPtr<HostObject>,
         ) -> UniquePtr<JsiObject>;
@@ -130,11 +147,15 @@ pub mod ffi {
             ho: UniquePtr<HostObject>,
         ) -> UniquePtr<JsiObject>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_compare(rt: Pin<&mut Runtime>, lhs: &JsiObject, rhs: &JsiObject) -> bool;
+        pub unsafe fn Object_compare(
+            rt: Pin<&mut Runtime>,
+            lhs: &JsiObject,
+            rhs: &JsiObject,
+        ) -> bool;
         #[cxx_name = "instanceOf"]
         pub fn instance_of(self: &JsiObject, rt: Pin<&mut Runtime>, ctor: &JsiFunction) -> bool;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_getProperty(
+        pub unsafe fn Object_getProperty(
             _self: &JsiObject,
             rt: Pin<&mut Runtime>,
             prop: &PropNameID,
@@ -142,7 +163,7 @@ pub mod ffi {
         #[cxx_name = "hasProperty"]
         pub fn has_property(self: &JsiObject, rt: Pin<&mut Runtime>, prop: &PropNameID) -> bool;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_setProperty(
+        pub unsafe fn Object_setProperty(
             _self: Pin<&mut JsiObject>,
             rt: Pin<&mut Runtime>,
             prop: &PropNameID,
@@ -156,7 +177,7 @@ pub mod ffi {
         pub fn is_function(self: &JsiObject, rt: Pin<&mut Runtime>) -> bool;
         // TODO: isHostObject after implementing Rust HostObject subclass
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_asArray(
+        pub unsafe fn Object_asArray(
             _self: &JsiObject,
             rt: Pin<&mut Runtime>,
         ) -> Result<UniquePtr<JsiArray>>;
@@ -164,12 +185,12 @@ pub mod ffi {
         // i'm not sure if that's the same as an exception or whether it will
         // lead to UB
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_asArrayBuffer(
+        pub unsafe fn Object_asArrayBuffer(
             _self: &JsiObject,
             rt: Pin<&mut Runtime>,
         ) -> Result<UniquePtr<JsiArrayBuffer>>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_asFunction(
+        pub unsafe fn Object_asFunction(
             _self: &JsiObject,
             rt: Pin<&mut Runtime>,
         ) -> Result<UniquePtr<JsiFunction>>;
@@ -179,7 +200,7 @@ pub mod ffi {
             rt: Pin<&mut Runtime>,
         ) -> Result<SharedPtr<HostObject>>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Object_getPropertyNames(
+        pub unsafe fn Object_getPropertyNames(
             _self: Pin<&mut JsiObject>,
             rt: Pin<&mut Runtime>,
         ) -> UniquePtr<JsiArray>;
@@ -187,12 +208,12 @@ pub mod ffi {
         #[cxx_name = "WeakObject"]
         pub type JsiWeakObject;
         #[namespace = "jsi_rs::ffi"]
-        pub fn WeakObject_fromObject(
+        pub unsafe fn WeakObject_fromObject(
             rt: Pin<&mut Runtime>,
             object: &JsiObject,
         ) -> UniquePtr<JsiWeakObject>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn WeakObject_lock(
+        pub unsafe fn WeakObject_lock(
             _self: Pin<&mut JsiWeakObject>,
             rt: Pin<&mut Runtime>,
         ) -> UniquePtr<JsiValue>;
@@ -255,15 +276,15 @@ pub mod ffi {
         #[cxx_name = "Value"]
         pub type JsiValue;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_fromUndefined() -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_fromUndefined() -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_fromNull() -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_fromNull() -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_fromBool(b: bool) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_fromBool(b: bool) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_fromDouble(d: f64) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_fromDouble(d: f64) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_fromInt(i: i32) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_fromInt(i: i32) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
         pub fn Value_fromString(
             rt: Pin<&mut Runtime>,
@@ -280,13 +301,22 @@ pub mod ffi {
             s: UniquePtr<JsiSymbol>,
         ) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_copyFromString(rt: Pin<&mut Runtime>, s: &JsiString) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_copyFromString(
+            rt: Pin<&mut Runtime>,
+            s: &JsiString,
+        ) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_copyFromObject(rt: Pin<&mut Runtime>, o: &JsiObject) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_copyFromObject(
+            rt: Pin<&mut Runtime>,
+            o: &JsiObject,
+        ) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_copyFromSymbol(rt: Pin<&mut Runtime>, s: &JsiSymbol) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_copyFromSymbol(
+            rt: Pin<&mut Runtime>,
+            s: &JsiSymbol,
+        ) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_fromJson(rt: Pin<&mut Runtime>, s: &str) -> UniquePtr<JsiValue>;
+        pub unsafe fn Value_fromJson(rt: Pin<&mut Runtime>, s: &str) -> UniquePtr<JsiValue>;
         #[namespace = "jsi_rs::ffi"]
         pub fn Value_compare(rt: Pin<&mut Runtime>, lhs: &JsiValue, rhs: &JsiValue) -> bool;
         #[cxx_name = "isUndefined"]
@@ -308,22 +338,25 @@ pub mod ffi {
         #[cxx_name = "asNumber"]
         pub fn get_number(self: &JsiValue) -> Result<f64>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_asString(
+        pub unsafe fn Value_asString(
             _self: &JsiValue,
             rt: Pin<&mut Runtime>,
         ) -> Result<UniquePtr<JsiString>>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_asObject(
+        pub unsafe fn Value_asObject(
             _self: &JsiValue,
             rt: Pin<&mut Runtime>,
         ) -> Result<UniquePtr<JsiObject>>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_asSymbol(
+        pub unsafe fn Value_asSymbol(
             _self: &JsiValue,
             rt: Pin<&mut Runtime>,
         ) -> Result<UniquePtr<JsiSymbol>>;
         #[namespace = "jsi_rs::ffi"]
-        pub fn Value_toString(_self: &JsiValue, rt: Pin<&mut Runtime>) -> UniquePtr<JsiString>;
+        pub unsafe fn Value_toString(
+            _self: &JsiValue,
+            rt: Pin<&mut Runtime>,
+        ) -> UniquePtr<JsiString>;
         #[namespace = "jsi_rs::ffi"]
         pub fn Value_copy(_self: &JsiValue, rt: Pin<&mut Runtime>) -> UniquePtr<JsiValue>;
     }
@@ -344,8 +377,8 @@ pub mod ffi {
 
         pub fn create_value_vector() -> UniquePtr<CxxVector<JsiValue>>;
         pub fn push_value_vector(vec: Pin<&mut CxxVector<JsiValue>>, item: UniquePtr<JsiValue>);
-        pub fn create_prop_name_vector() -> UniquePtr<CxxVector<PropNameID>>;
-        pub fn push_prop_name_vector(
+        pub unsafe fn create_prop_name_vector() -> UniquePtr<CxxVector<PropNameID>>;
+        pub unsafe fn push_prop_name_vector(
             vec: Pin<&mut CxxVector<PropNameID>>,
             item: UniquePtr<PropNameID>,
         );

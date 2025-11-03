@@ -10,11 +10,13 @@ pub struct JsiSymbol<'rt>(
 
 impl RuntimeEq for JsiSymbol<'_> {
     fn eq(&self, other: &Self, rt: &mut RuntimeHandle<'_>) -> bool {
-        sys::base::Symbol_compare(
-            rt.get_inner_mut(),
-            self.0.as_ref().unwrap(),
-            other.0.as_ref().unwrap(),
-        )
+        unsafe {
+            sys::base::Symbol_compare(
+                rt.get_inner_mut(),
+                self.0.as_ref().unwrap(),
+                other.0.as_ref().unwrap(),
+            )
+        }
     }
 }
 

@@ -10,20 +10,24 @@ pub struct JsiString<'rt>(
 
 impl<'rt> JsiString<'rt> {
     pub fn new(name: &str, rt: &mut RuntimeHandle<'rt>) -> Self {
-        JsiString(
-            sys::base::String_fromUtf8(rt.get_inner_mut(), name),
-            PhantomData,
-        )
+        unsafe {
+            JsiString(
+                sys::base::String_fromUtf8(rt.get_inner_mut(), name),
+                PhantomData,
+            )
+        }
     }
 }
 
 impl RuntimeEq for JsiString<'_> {
     fn eq(&self, other: &Self, rt: &mut RuntimeHandle<'_>) -> bool {
-        sys::base::String_compare(
-            rt.get_inner_mut(),
-            self.0.as_ref().unwrap(),
-            other.0.as_ref().unwrap(),
-        )
+        unsafe {
+            sys::base::String_compare(
+                rt.get_inner_mut(),
+                self.0.as_ref().unwrap(),
+                other.0.as_ref().unwrap(),
+            )
+        }
     }
 }
 

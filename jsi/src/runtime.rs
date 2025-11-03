@@ -24,7 +24,7 @@ impl<'rt> RuntimeHandle<'rt> {
     }
 
     pub fn global(&mut self) -> JsiObject<'rt> {
-        JsiObject(sys::base::Runtime_global(self.get_inner_mut()), PhantomData) 
+        unsafe { JsiObject(sys::base::Runtime_global(self.get_inner_mut()), PhantomData) }
     }
 
     pub fn eq<T: RuntimeEq>(&mut self, lhs: &T, rhs: &T) -> bool {

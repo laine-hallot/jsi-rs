@@ -11,17 +11,21 @@ pub struct PropName<'rt>(
 
 impl<'rt> PropName<'rt> {
     pub fn new(name: &str, rt: &mut RuntimeHandle<'rt>) -> Self {
-        PropName(
-            sys::base::PropNameID_forUtf8(rt.get_inner_mut(), name),
-            PhantomData,
-        )
+        unsafe {
+            PropName(
+                sys::base::PropNameID_forUtf8(rt.get_inner_mut(), name),
+                PhantomData,
+            )
+        }
     }
 
     pub fn from_string(name: JsiString<'rt>, rt: &mut RuntimeHandle<'rt>) -> Self {
-        PropName(
-            sys::base::PropNameID_forString(rt.get_inner_mut(), &*name.0),
-            PhantomData,
-        )
+        unsafe {
+            PropName(
+                sys::base::PropNameID_forString(rt.get_inner_mut(), &*name.0),
+                PhantomData,
+            )
+        }
     }
 }
 
@@ -36,16 +40,18 @@ impl RuntimeClone<'_> for PropName<'_> {
 
 impl RuntimeDisplay for PropName<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, rt: &mut RuntimeHandle<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            sys::base::PropNameID_toUtf8(&*self.0, rt.get_inner_mut()).to_string()
-        )
+        unsafe {
+            write!(
+                f,
+                "{}",
+                sys::base::PropNameID_toUtf8(&*self.0, rt.get_inner_mut()).to_string()
+            )
+        }
     }
 }
 
 impl RuntimeEq for PropName<'_> {
     fn eq(&self, other: &Self, rt: &mut RuntimeHandle<'_>) -> bool {
-        sys::base::PropNameID_compare(rt.get_inner_mut(), &*self.0, &*other.0)
+        unsafe { sys::base::PropNameID_compare(rt.get_inner_mut(), &*self.0, &*other.0) }
     }
 }

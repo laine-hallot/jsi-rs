@@ -1,5 +1,8 @@
+use std::cell::RefCell;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::pin::pin;
+use std::rc::Rc;
 
 use crate::array::JsiArray;
 use crate::array_buffer::JsiArrayBuffer;
@@ -518,4 +521,97 @@ pub enum JsiValueKind<'rt> {
     String(JsiString<'rt>),
     Symbol(JsiSymbol<'rt>),
     Object(JsiObject<'rt>),
+}
+
+pub struct EasierJsiValue {
+    runtime_handle: Rc<RefCell<jsi::sys::base::Runtime>>,
+    value: jsi::sys::base::JsiValue,
+}
+
+impl EasierJsiValue {
+    pub fn is_null(&self) -> bool {
+        // qualify this method call to avoid confusion with UniquePtr::is_null
+        sys::base::JsiValue::is_null(&self.value)
+    }
+
+    pub fn is_undefined(&self) -> bool {
+        self.value.is_undefined()
+    }
+
+    pub fn is_number(&self) -> bool {
+        self.value.is_number()
+    }
+
+    pub fn is_bool(&self) -> bool {
+        self.value.is_bool()
+    }
+
+    pub fn is_string(&self) -> bool {
+        self.value.is_string()
+    }
+
+    pub fn is_symbol(&self) -> bool {
+        self.value.is_symbol()
+    }
+
+    pub fn is_object(&self) -> bool {
+        self.value.is_object()
+    }
+
+    pub fn is_truthy(&self) -> bool {
+        let rt = self.runtime_handle.clone();
+        match self.kind() {
+            JsiValueKind::Undefined | JsiValueKind::Null => false,
+            JsiValueKind::Number(n) => n.abs() > f64::EPSILON,
+            JsiValueKind::Bool(b) => b,
+            JsiValueKind::String(s) => unsafe {
+                sys::base::String_toString(&s.0, pin!(rt.clone().borrow_mut())).len() > 0
+            },
+            JsiValueKind::Symbol(_) | JsiValueKind::Object(_) => true,
+        }
+    }
+
+    pub fn to_js_string(&'_ self) -> JsiString<'_> {
+        let rt = self.runtime_handle.clone();
+        JsiString(
+            self.value.to_string(pin!(rt.clone().borrow_mut())),
+            PhantomData,
+        )
+    }
+
+    pub fn kind(&'_ self) -> JsiValueKind<'_> {
+        let rt = self.runtime_handle.clone();
+        if self.is_null() {
+            JsiValueKind::Null
+        } else if self.is_undefined() {
+            JsiValueKind::Undefined
+        } else if self.is_number() {
+            JsiValueKind::Number(self.value.get_number().ok().unwrap())
+        } else if self.is_bool() {
+            JsiValueKind::Bool(self.value.get_bool().ok().unwrap())
+        } else if self.is_string() {
+            JsiValueKind::String(unsafe {
+                sys::base::Value_asString(&self.value, pin!(rt.clone().borrow_mut()))
+                    .ok()
+                    .map(|raw| JsiString(raw, PhantomData))
+                    .unwrap()
+            })
+        } else if self.is_symbol() {
+            JsiValueKind::Symbol(unsafe {
+                sys::base::Value_asSymbol(&self.value, pin!(rt.clone().borrow_mut()))
+                    .ok()
+                    .map(|raw| JsiSymbol(raw, PhantomData))
+                    .unwrap()
+            })
+        } else if self.is_object() {
+            JsiValueKind::Object(unsafe {
+                sys::base::Value_asObject(&self.value, pin!(rt.clone().borrow_mut()))
+                    .ok()
+                    .map(|raw| JsiObject(raw, PhantomData))
+                    .unwrap()
+            })
+        } else {
+            panic!("JSI value has no known type")
+        }
+    }
 }

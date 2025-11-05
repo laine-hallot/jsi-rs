@@ -1,5 +1,5 @@
 use crate::object::JsiObject;
-use crate::sys;
+use crate::{sys, JsiValue};
 use std::cell::Cell;
 use std::marker::PhantomData;
 use std::pin::Pin;
@@ -46,6 +46,11 @@ impl<'rt> RuntimeHandle<'rt> {
     pub fn to_string<'a, T: RuntimeDisplay>(&'a mut self, it: &'a T) -> String {
         self.display(it).to_string()
     }
+
+    pub fn eval_js(&'_ mut self, script: &String) -> JsiValue<'_> {
+        let value = sys::hermes::eval_js(self.get_inner_mut(), script.as_str());
+        return JsiValue(value, PhantomData);
+    }
 }
 
 unsafe impl<'rt> Send for RuntimeHandle<'rt> {}
@@ -81,4 +86,12 @@ impl<'a, T: RuntimeDisplay> std::fmt::Display for RuntimeDisplayWrapper<'a, T> {
         self.0.replace(Some(s));
         r
     }
+}
+
+pub fn create_runtime<'rt>(config: sys::hermes::HermesRuntimeConfig) -> RuntimeHandle<'rt> {
+    let runtime_config = sys::hermes::create_runtime_config(config);
+    let runtime = sys::hermes::create_hermes_runtime(&runtime_config);
+    let rt = jsi::sys::hermes::cast_hermes_runtime(runtime);
+
+    RuntimeHandle::new_unchecked(rt.into_raw())
 }
